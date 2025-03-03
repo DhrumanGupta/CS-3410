@@ -4,6 +4,7 @@
 \setlength{\evensidemargin}{0in}
 \setlength{\textheight}{10.5in}
 \setlength{\textwidth}{6.5in}
+\setlength{\parindent}{0pt}
 \usepackage{enumitem}
 \usepackage{amsmath}
 \usepackage{hyperref}
@@ -19,6 +20,7 @@
 \usepackage{mathtools}
 \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 \DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+\DeclareMathOperator{\Tr}{Tr}
 
 \hypersetup{
     colorlinks=true,
@@ -38,7 +40,7 @@
 
 \vspace{0.1in}
 
-{\large \bf \color{blue}  Design and Analysis of Algorithms: CS-3210-1}
+{\large \bf \color{blue} Introduction to Machine Learning: CS-3410-1}
 
 \vspace{0.05in}
 
@@ -51,281 +53,310 @@
 \bigskip
 \hrule
 
-\begin{enumerate}
-    \item We want to write a k-way merge sort algorithm.\\
-    This can be done by the following algorithm:\\
-    
-    Input: A list $A$ of size $n$ and an integer $k$.\\
+\section{Poisson Distribution as an Exponential Family}
+\subsection{Finding the parameters of the exponential family}
+Each member of the univariate exponential family has the form:
+\begin{equation*}
+    p(x | \eta) = b(x) \exp(\eta x - A(\eta))
+\end{equation*}
 
-    1. First, we remove the trivial case, where $n = 1$. In this case, we return the array as it is.\\
-    2. Otherwise, we divide the list into $k$ parts. Solve each of these parts recursively.\\
-    3. Now, we have $k$ sorted lists. We now want to merge them efficiently.\\
-    4. We can do this by using a min-heap. We can parameterize the heap as a heap which's elements is an list, and the key of the heap is the first element of the list.\\
-    5. Insert the $k$ sorted lists into the heap.\\
-    6. While the heap is not empty, do the following:
-        \begin{itemize}
-            \item Remove the minimum element from the heap. This is the array with the smallest first element.
-            \item Add the element to the result list.
-            \item Remove the element from the list it was from, and insert the remaining tail into the heap. If the tail is empty, do not insert it.
-        \end{itemize}
-    7. Return the result list.
+We want to find these parameters for the poisson distribution, which is given by:
+\begin{equation*}
+    p(x | \lambda) = \frac{\lambda^x e^{-\lambda}}{x!}
+\end{equation*}
 
-
-    Now, note that we have the following invariants:\\
-    1. Each list is sorted. i.e, the smallest element is at the beginning of the list.\\
-    2. The min element of the heap is the smallest first element of all the lists.\\
-
-    By this, we get the following conclusion:\\
-    1. The min element of the heap is the smallest element in all $k$ lists.\\
-    2. The first element of the tail (after removing the first element of the list) is still the smallest element in that list (thus the invariant is maintained).\\
-
-    \textbf{Proof of correctness:}\\
-    We will prove using strong induction on the size of the list.\\
-
-    \textbf{Base case:} When $n = 1$, the list is already sorted, and the result is the same as the input.\\
-
-    \textbf{Inductive Hypothesis:} $\exists k \in \mathbb{N}, \forall n \leq k$ k-way merge sort returns a sorted list.\\
-
-    \textbf{Inductive Step:} We need to show that if the algorithm is correct for all $n \leq k$, then it is correct for $n = k+1$.\\
-
-    We first split the list into $k$ parts. So, each part has at most $\ceil{\frac{n}{k}}$ elements. We sort these, which will be correctly sorted by the inductive hypothesis. Now, we construct the min-heap. Following the invairants listed above, we can see that the minimum element of the heap is the smallest element in all $k$ lists. Now, we remove the first element from the min element of the heap heap, and insert the remaining tail into the heap. This will maintain the invariant that the heap is a min-heap, and that all $k$ lists in the heap are sorted. We repeat this until the heap is empty. At this point, we have merged all the lists, and the result is a sorted list.
-
-    Thus, if the algorithm is correct for all $n \leq k$, then it is correct for $n = k+1$.\\
-
-    By the principle of strong induction, we have shown that the algorithm is correct for all $n \in \mathbb{N}$, i.e for any arbitrary size of the list, the algorithm will return a sorted list.
-
-    \newpage
-
-    \textbf{Time Complexity Analysis:}\\
-    $T(n)$ = Time taken to split + Time taken to recursively sort each part + Time taken to merge.\\
-
-    Now, partitioning into $k$ lists takes $O(n)$ time. This can be done in a single pass.\\
-    Recursively sorting each part takes $T(\ceil{\frac{n}{k}})$ time by the inductive hypothesis.\\
-    Now, we need to merge the $k$ sorted lists. Say this takes $R(n, k)$ time.\\
-
-    So, $T(n) = O(n) + k \times T(\ceil{\frac{n}{k}}) + R(n, k)$\\
-
-    Let's solve for $R(n, k)$.\\
-
-    $R(n, k)=$ Time to build min-heap + Time to extract and insert elements from the heap.\\
-
-    It is known that time to build a min-heap is $O(k)$, as there are $k$ elements.\\
-    There are a total of $n$ elements in all the lists. We will extract each element exactly only once. Each extraction will take $O(\log k)$ time, as we are extracting from a heap of size $k$.\\
-
-    So, $R(n, k) = O(k) + n \times O(\log k) = O(k + n \log k) = O(n \log k)$ (under the assumption that $k$ is no more than order of $n$).\\
-
-    So, $T(n) = O(n) + k \times T(\ceil{\frac{n}{k}}) + O(n \log k) = kT(\frac{n}{k}) + O(n \log k)$.\\
-    Also, note that $T(1) = O(1)$. Let's solve this.
-    \begin{align*}
-        T(n) &= kT(\frac{n}{k}) + O(n \log k)\\
-        &= k(kT(\frac{n}{k^2}) + O(\frac{n}{k} \log k)) + O(n \log k)\\
-        &= k^2T(\frac{n}{k^2}) + 2O(n \log k)\\
-        &= k^2(kT(\frac{n}{k^3}) + O(\frac{n}{k^2} \log k)) + 2O(n \log k)\\
-        &= k^3T(\frac{n}{k^3}) + 3O(n \log k)\\
-        &= \dots\\
-        &= k^{i}T(\frac{n}{k^i}) + iO(n \log k)
-    \end{align*}
-    Now, assume for some $i$, $n = k^i$. Then, $i = \log_k n = \frac{\log n}{\log k}$.
-    \begin{align*}
-        T(n) &= k^{\log_k n}T(1) + \log_k n \times O(n \log k)\\
-        &= O(n \frac{\log k \log n}{\log k})\\
-        &= O(n \log n)
-    \end{align*}
-
-    Thus, $T(n) = O(n \log n)\ \forall n, k \in \mathbb{N}$.
-    
-    \newpage
-    \item We want to prove the $O(\log n)$ height property for an AVL tree. We are given that the different between the heights of the left and right subtrees is at most 1.
-    
-    Let $N(h)$ be the minimum number of nodes in an AVL tree of height $h$. Now, we know that in the worst case, the tree is unbalanced at every level. But, pair of siblings can only differ by 1. We can use this to formulate the following constraint:\\
-
-    $N(h) = N(h-1) + N(h-2) + 1$. We can keep the base cases as $N(0) = 0$, and $N(1) = 1$. Now, we can actually show that:
-    \begin{align*}
-        N(h) \geq F_{n+1} - 1\ \forall h \in \mathbb{N}
-    \end{align*}
-    Where $F_n$ is the $n$th Fibonacci number ($F_0 = 0, F_1 = 1$). We can prove this by induction.\\
-
-    \textbf{Base case:}\\
-    When $h = 0$, $N(0) = 0 = F_1 - 1 = 0$. When $h = 1$, $N(1) = 1 = F_2 - 1 = 0$. So, the base case holds.\\
-
-    \textbf{Inductive Hypothesis:}\\
-    $\exists k \in \mathbb{N}, \forall n \leq k$ $N(n) \geq F_{n+1} - 1$.\\
-
-    \textbf{Inductive Step:}\\
-    We need to show that if the statement is true for all $n \leq k$, then it is true for $n = k+1$.\\
-
-    By the inductive hypothesis, we know that:\\
-    \begin{align*}
-        N(k-1) \geq F_{k} - 1 \\
-        N(k-2) \geq F_{k-1} - 1
-    \end{align*}
-
-    $N(k) = N(k-1) + N(k-2) + 1 \geq (F_{k} - 1) + (F_{k-1} - 1) + 1 = F_{k+1} - 1$.
-    
-    Thus, by the principle of induction, we have shown that $N(h) \geq F_{h+1} - 1\ \forall h \in \mathbb{N}$.
-   
-    
-    Now, we know that the $n^{th}$ Fibonacci number is given by the following formula:
-    \begin{align*}
-        F_n = \Omega(\phi^n)
-    \end{align*}
-    Where $\phi = \frac{1+\sqrt{5}}{2}$ is the golden ratio. Now, we know that $N(h) \geq F_{h+1} - 1$.
-    \begin{align*}
-        N(h) = \Omega(\phi^{h+1} + 1) = O(\phi^{h+1})
-    \end{align*}
-
-    Now, if an AVL tree of height $h$ has $n$ nodes, we know that:
-    \begin{align*}
-        n \geq N(h) \geq \Omega(\phi^h)
-    \end{align*}
-    Taking logarithms on both sides, we get:
-    \begin{align*}
-        \log n \geq \log \Omega(\phi^h) = h \log \phi\\
-        \implies h = O(\log n)
-    \end{align*}
-    
-    So, thus, the height of an AVL tree is $O(\log n)$, where $n$ is the number of nodes in the tree.
-
-    \newpage
-    \item Given 2 polynomials $P_A(n) = a_{n-1}x^{n-1} + a_{n-2}x^{n-2} + \dots + a_1x + a_0$ and $P_B(n) = b_{n-1}x^{n-1} + b_{n-2}x^{n-2} + \dots + b_1x + b_0$, we want to multiply them in sub $O(n^2)$ time. We will use the karatsuba algorithm to do this.\\
-    
-    First, divide the polynomials into two halves. Let $n$ be the degree of the polynomial. Then, we can write:
-    \begin{align*}
-        P_{A1} = a_{n-1}x^{\floor{\frac{n}{2}}-1} + a_{n-2}x^{\floor{\frac{n}{2}}-2} + \dots + a_{\ceil{\frac{n}{2}}}x^0\\
-        P_{A2} = a_{\ceil{\frac{n}{2}}-1}x^{\ceil{\frac{n}{2}}-1} + a_{\ceil{\frac{n}{2}}-2}x^{\ceil{\frac{n}{2}}-2} + \dots + a_0x^0\\
-        P_{B1} = b_{n-1}x^{\floor{\frac{n}{2}}-1} + b_{n-2}x^{\floor{\frac{n}{2}}-2} + \dots + b_{\ceil{\frac{n}{2}}}x^0\\
-        P_{B2} = b_{\ceil{\frac{n}{2}}-1}x^{\ceil{\frac{n}{2}}-1} + b_{\ceil{\frac{n}{2}}-2}x^{\ceil{\frac{n}{2}}-2} + \dots + b_0x^0
-    \end{align*}
-    
-    Now, we can write:
-    \begin{align*}
-        P_A(n) = P_{A1}x^{\ceil{\frac{n}{2}}} + P_{A2}\\
-        P_B(n) = P_{B1}x^{\ceil{\frac{n}{2}}} + P_{B2}
-    \end{align*}
-
-    This allows us to re-write the product of the two polynomials as:
-    \begin{align*}
-        P_A(n)P_B(n) = (P_{A1}x^{\ceil{\frac{n}{2}}} + P_{A2})(P_{B1}x^{\ceil{\frac{n}{2}}} + P_{B2})\\
-        = P_{A1}P_{B1}x^n + (P_{A1}P_{B2} + P_{A2}P_{B1})x^{\ceil{\frac{n}{2}}} + P_{A2}P_{B2}
-    \end{align*}
-    
-
-    Now, note that $P_{A1}, P_{A2}, P_{B1}, P_{B2}$ are of at most degree $\ceil{\frac{n}{2}}$. We need to calculate the 4 products mentioned above, and then do the 3 additions. Cleverly, we can note that:
-    \begin{align*}
-        (P_{A2} + P_{A1})(P_{B2} + P_{B1}) - P_{A1}P_{B1} - P_{B2}P_{A2} = P_{A1}P_{B2} + P_{A2}P_{B1}
-    \end{align*}
-
-    Now, we can do 2 additions, and 2 subtractions with $n/2$ bit numbers. Then, we have to do 2 multiplications with $n/2$ bit numbers, and a multiplication with a set of $n+1$ bit numbers. This reduces the number of multiplications to 3. With this, we can clearly write the following algorithm:
-
-    1. If $n = 1$, return $a_0b_0$\\
-    2. Partition $P_A(n)$ and $P_B(n)$ into $P_{A1}, P_{A2}, P_{B1}, P_{B2}$ as defined above. This is just splitting the coefficients of the polynomials.\\
-    3. Now, calculate $(P_{A2} + P_{A1})(P_{B2} + P_{B1})$, $P_{A1}P_{B1}$, and $P_{A2}P_{B2}$, recursively.\\
-    4. Using the forumla above, we attain the value of $P_{A1}P_{B2} + P_{A2}P_{B1}$.\\
-    5. Now, we can calculate the product of the two polynomials using the formula given above.\\
-    6. Return $P_{A1}P_{B1}x^n + (P_{A1}P_{B2} + P_{A2}P_{B1})x^{\ceil{\frac{n}{2}}} + P_{A2}P_{B2}$\\
-
-    Now, let's analyze the time complexity of this algorithm.
-    $T(n) = $ time to partition the polynomials + time to calculate the 3 products + time to do the 3 additions and subtractions + time to do the bit shifts for the final answer.
-    \begin{itemize}
-        \item Time to partition the polynomials: $O(n)$
-        \item Time to calculate the each of the 3 products: $T(\ceil{\frac{n}{2}})$ (for one of the products it takes 1 more bit of multiplcation, but when we do big O analysis we can omit that)
-        \item Time to do the 3 additions and subtractions: $O(n)$
-        \item Time to do the bit shifts for the final answer: $O(n)$
-    \end{itemize}
-
-    So, $T(n) = O(n) + 3T(\ceil{\frac{n}{2}}) + O(n) = O(n) + 3T(\ceil{\frac{n}{2}})$
-    \begin{align*}
-        T(n) &= O(n) + 3T(\ceil{\frac{n}{2}})\\
-        &= O(n) + 3O(\ceil{\frac{n}{2}}) + 9T(\ceil{\frac{n}{4}})\\
-        &= \dots\\
-        &= \sum_{i=0}^{k} 3^i O(\ceil{\frac{n}{2^i}}) + 3^{k+1}T(\ceil{\frac{n}{2^{k+1}}})\\
-        \end{align*}
-
-    Now, assume for some $i$, $n = 2^i$. Then, $i = \log_2 n$. Also, $T(1) = O(1)$ (just 1 multiplication).
-    \begin{align*}
-    T(n) &= \sum_{j=0}^{\log_2 n} 3^j O(\ceil{\frac{n}{2^j}}) + 3^{\log_2 n} O(1) = O(n + 3n/2 + 9n/4 + \dots + (\frac{3}{2})^{\log_2 n}n)\\
-    &= O(n\frac{(3/2)^{\log_2 n} - 1}{3/2 - 1}) = O(n (n^{\log_2 3 - 1})) = O(n^{\log_2 3})
+For the case of the poisson distribution, we have:
+\begin{align*}
+    \eta &= \log \lambda \\
+    b(x) &= \frac{1}{x!} \\
+    A(\eta) &= e^\eta
 \end{align*}
 
-Now, $\log_2 3 ~ 1.585$. So, $n^{\log_2 3} = n^{1.58}$ is sub-quadratic. Thus we are able to multiply 2 polynomials in sub-quadratic time.\\
+Plugging in the values, we get:
+\begin{align*}
+    p(x | \eta) &= b(x) \exp(\eta x - A(\eta)) \\
+    &= \frac{1}{x!} \exp((\log \lambda) x - e^{\log \lambda}) \\
+    &= \frac{1}{x!} \exp(- \lambda) \lambda^x \\
+    &= \frac{\lambda^x e^{-\lambda}}{x!}
+\end{align*}
 
-\textbf{Proof of correctness:}\\
-The proof of correctness is given by the discussion above. We can do this by induction.
+This proves that the poisson distribution is a member of the univariate exponential family, and the exact parameters are those given above.
 
-\textbf{Base case:} When $n = 1$, we have $a_0b_0$, which is the product of the two constants.
+\subsection{Verifying $\mathbb{E}[X]$ and $Var(X)$}
 
-\textbf{Inductive Hypothesis:} $\exists k \in \mathbb{N}, \forall n \leq k$ the algorithm is correct.
+\begin{enumerate}[label=(\alph*)]
+    \item $\mathbb{E}[X] = A'(\eta)$. Let's first find $\mathbb{E}[X]$.
+    \begin{align*}
+        \mathbb{E}[X] &= \sum_{x=0}^{\infty} x p(x) \\
+        &= \sum_{x=0}^{\infty} x \frac{\lambda^x e^{-\lambda}}{x!} = \sum_{x=1}^{\infty} x \frac{\lambda^x e^{-\lambda}}{x!} \\
+        &= e^{-\lambda} \lambda \sum_{x=1}^{\infty} \frac{\lambda^{x-1}}{(x-1)!} \\
+        &= e^{-\lambda} \lambda \sum_{y=0}^{\infty} \frac{\lambda^y}{y!} \\
+        &= e^{-\lambda} \lambda e^{\lambda} \\
+        &= \lambda
+    \end{align*}
 
-\textbf{Inductive Step:} We need to show that if the algorithm is correct for all $n \leq k$, then it is correct for $n = k+1$.
+    This proves that $\mathbb{E}[X] = \lambda$. Now, $A(\eta) = e^\eta$. So, $A'(\eta) = e^\eta$. As $\eta = \log \lambda$, we have $A'(\eta) = \lambda$.
 
-Let's look at the 3 products we calculate. We know that the algorithm is correct for these products by the inductive hypothesis. Now, we know that the final answer is a linear combination of these products. The mathematical correctness of this is given by the discussion above.
+    This proves that $\mathbb{E}[X] = A'(\eta)$.
 
-Thus, by the principle of induction, we have shown that the algorithm is correct for all $n \in \mathbb{N}$.
+    \newpage
+    
+    \item $Var(X) = A''(\eta)$. Let's first find $Var(X)$. We will find $\mathbb{E}[X^2]$ first.
+    \begin{align*}
+        \mathbb{E}[X^2] &= \sum_{x=0}^{\infty} x^2 p(x) \\
+        &= \sum_{x=0}^{\infty} x^2 \frac{\lambda^x e^{-\lambda}}{x!} = \sum_{x=1}^{\infty} x^2 \frac{\lambda^x e^{-\lambda}}{x!} \\
+        &= e^{-\lambda} \lambda \sum_{x=1}^{\infty} x \frac{\lambda^{x-1}}{(x-1)!} \\
+        &= e^{-\lambda} \lambda \left(
+            \sum_{x=1}^{\infty} \frac{(x-1)\lambda^{x-1}}{(x-1)!} + \sum_{x=1}^{\infty} \frac{\lambda^{x-1}}{(x-1)!}
+        \right)\\
+        &= e^{-\lambda} \lambda \left(
+            e^{\lambda} + \lambda \sum_{y=0}^{\infty} \frac{\lambda^y}{y!}
+        \right)\\
+        &= e^{-\lambda} \lambda \left(
+            e^{\lambda} + \lambda e^{\lambda}
+        \right)\\
+        &= \lambda^2 + \lambda
+    \end{align*}
+
+    Now, $Var(X) = \mathbb{E}[X^2] - \mathbb{E}[X]^2 = \lambda^2 + \lambda - \lambda^2 = \lambda$.
+    
+    $A''(\eta) = \frac{d}{d\eta} A'(\eta) = e^\eta$. As $\eta = \log \lambda$, we have $A''(\eta) = \lambda$.\\
+
+    This proves that $Var(X) = A''(\eta)$.    
+\end{enumerate}
 
 \newpage
 
-\item We have to extend the problem of maximal points done in class to 3 dimensions.\\
+\section{Linear Combination of Random Variables}
+\subsection{Showing mean of Z}
 
-    (i). We want to create a data structure to determine if a given 2D point is below or above the staircase, in $O(\log n)$ time. Deletion of each maximal point should also be $O(\log n)$ time.\\
-    For this, choose any Balanced Binary Search Tree, i.e Red-Black trees, or AVL trees. For they key, we can use the first coordinate of the point. We can store the points in the tree as well, and the ordering of the points is imposed by the first coordinate. This tree can now be extended to have a search function for nearest upper (on the first axis), in $O(\log n)$ time.\\
+\begin{align*}
+    \mathbb{E}[Z] &= \mathbb{E}[\sum_{i=1}^{N} \omega_i X_i] \\
+    &= \sum_{i=1}^{N} \mathbb{E}[\omega_i X_i] = \sum_{i=1}^{N} \omega_i \mathbb{E}[X_i] \\
+    &= [\omega_1, \omega_2, \dots, \omega_N] \begin{bmatrix}
+        \mathbb{E}[X_1] \\
+        \mathbb{E}[X_2] \\
+        \vdots \\
+        \mathbb{E}[X_N]
+      \end{bmatrix}\\
+    &= \omega^T \mu
+\end{align*}
 
-    To find if a point $p = (p_1, p_2)$ is below or above the staircase, we can use the search function to find the nearest upper point on the x-axis, say $q = (q_1, q_2)$. Finding $q$ takes $O(\log n)$ time. If $q$ does not exist then this point is a maximal point by definition, as no point dominates this point on the first axis. Otherwise, we can simply check if $q_2 \geq p_2$. If $q_2 \geq p_2$, then $p$ is above the staircase, otherwise it is below the staircase.
+\subsection{Showing variance of Z}
 
-    To delete a maximal point, we can simply delete it from the tree. This takes $O(\log n)$ time, due to the properties of the class of trees we are using.\\
+\begin{align*}
+              Var(Z) &= Var(\sum_{i=1}^{N} \omega_i X_i) \\
+    &= \sum_{i=1}^{N} \sum_{j=1}^{N} \omega_i \omega_j Cov(X_i, X_j) \\
+    &= \sum_{i=1}^{N} \sum_{j=1}^{N} \omega_i \omega_j \Sigma_{ij} \\
+    &= \omega^T \Sigma \omega
+\end{align*}
 
-    (ii). Implementing the line sweep.
+\subsection{Bounding the correlation coefficient}
 
-    We are given a set of $n$ points, $(x_i, y_i, z_i)$. We want to find the maximal points in this set. First, we sort them by the x-coordinate. This takes $O(n \log n)$ time. Now, we can use the line sweep algorithm to find the maximal points. Also, since it is in 3D, it is a plane sweep.\\
-    
-    The algorithm is as follows:
+$\rho_{X_1, X_2} = \frac{Cov(X_1, X_2)}{\sigma_{X_1} \sigma_{X_2}}$, where \(\sigma_{X_i} = \sqrt{\operatorname{Var}(X_i)}\) for \(i=1,2\).\\
 
-    1. Sort the points by the x-coordinate.\\
-    2. Create an empty set $S$ to store the points.\\
-    3. Initialize a tree as mentioned above. Let it be empty as of now.\\
-    4. Traverse the points in a descending order of x-coordinate. We can do this since we sorted the points by the x-coordinate.\\
-    5. Given a point $p_i = (x_i, y_i, z_i)$, check if $(y_i, z_i)$ is a maximal point in the current set of points in the tree.\\
-    6. If it is, insert it into the set $S$. In the tree, insert $(y_i, z_i)$. Then, go over each element in the tree and check whether it is dominated by $(y_i, z_i)$. If it is, delete it from the tree. Denote this number of deletions as $d_i$.\\
-    7. Otherwise, if it is not a maximal point, discard it.\\
-    8. Return the set $S$ as the maximal points.\\
+To use the Cauchy-Schwarz inequality, we first consider the 0-mean random variables:
+\[
+Y_1 = X_1 - \mathbb{E}[X_1] \quad \text{and} \quad Y_2 = X_2 - \mathbb{E}[X_2].
+\]
+Then, by definition, we have
+\[
+\operatorname{Cov}(X_1, X_2) = \mathbb{E}[Y_1 Y_2] \quad \text{and} \quad \sigma_{X_i}^2 = \mathbb{E}[Y_i^2] \text{ for } i=1,2.
+\]
 
-    \textbf{Proof of correctness:}\\
-    Let's first establish the invariants for this algorithm.
+We want to show that $-1 \leq \rho_{X_1, X_2} \leq 1$, using the Cauchy-Schwarz inequality.\\
 
-    1. Before and after traversion of each point, the tree always contains only maximal points in the 2D y-z plane at the current x-coordinate.\\
-    2. The set $S$ always contains the maximal points in 3D until the current point is considered.\\
+The Cauchy-Schwarz inequality states that:
+\begin{equation*}
+    |\mathbb{E}[X_1 X_2]| \leq \sqrt{\mathbb{E}[X_1^2] \mathbb{E}[X_2^2]}
+\end{equation*}
 
-    \textbf{Initialization:} When $n=0$, the tree is empty, and $S$ is empty. The invariants are trivially true.\\
+Substituting the definitions, we obtain
+\[
+|\operatorname{Cov}(X_1, X_2)| \leq \sigma_{X_1}\sigma_{X_2}.
+\]
+Dividing both sides of the inequality by \(\sigma_{X_1}\sigma_{X_2}\) (which are positive), we have
+\[
+\left|\frac{\operatorname{Cov}(X_1, X_2)}{\sigma_{X_1}\sigma_{X_2}}\right| \leq 1.
+\]
+Thus,
+\[
+|\rho_{X_1, X_2}| \leq 1,
+\]
+which implies
+\[
+-1 \leq \rho_{X_1, X_2} \leq 1.
+\]
+This completes the proof.
+\newpage
 
-    \textbf{Maintenance:} We need to show that the invariants are maintained after the $i^{th}$ point is considered. Before the execution, we know that the invariants hold up until the $(i-1)^{th}$ point. Now, we consider the $i^{th}$ point.\\
+\subsection{Finding the expected value of a Gaussian}
 
-    \textbf{Case 1:} The $i^{th}$ point is a maximal point.\\
-    If this is the case, then since the $i^{th}$ point is already dominated on the x axis by all previous points (due to the descending order of x-coordinates), it must be a maximal point in the 2D y-z plane. This is exactly what the tree checks for. So, the point $i$ will be inserted into $S$, and the y and z coordinates will be inserted into the tree. 
+We are asked to derive the value of the integral:
+\begin{equation*}
+    \int_{-\infty}^{\infty} \frac{x}{\sqrt{2\pi} \sigma} e^{-\frac{(x-\mu)^2}{2\sigma^2}} dx
+\end{equation*}
 
-    Now what remains is to check if any of the points in the tree are dominated by $(y_i, z_i)$. If they are, then they are deleted from the tree. This is done in a straightforward manner by traversing and comparing the points in the tree. There are $d_i$ deletions at this step. After this process, the tree contains only maximal points.
+We will first use the substitution $u = \frac{x - \mu}{\sigma}$. Then, $dx = \sigma du$. Substituting, we get:
+\begin{align*}
+    &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} (\sigma u + \mu) \exp(-\frac{(\sigma u + \mu - \mu)^2}{2\sigma^2}) du\\
+    &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} (\sigma u + \mu) \exp(-\frac{u^2}{2}) du\\
+    &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} \mu \exp(-\frac{u^2}{2}) du + \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} \sigma u \exp(-\frac{u^2}{2}) du
+\end{align*}
 
-    So, the invariants are maintained.\\
+Now, we have to evaluate the two integrals. Let's start with the first one:
+\begin{align*}
+    &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} \mu \exp(-\frac{u^2}{2}) du\\
+    &= \frac{\mu}{\sqrt{2\pi}} \int_{-\infty}^{\infty} \exp(-\frac{u^2}{2}) du\\
+    &= \frac{\mu}{\sqrt{2\pi}} \sqrt{2\pi}\\
+    &= \mu
+\end{align*}
 
-    \textbf{Termination:} When the algorithm terminates, all points have been considered. By the invariants, the set $S$ contains all the maximal points in the 3D space. This is exactly what is required.
+Now, let's evaluate the second integral:
+\begin{align*}
+    &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} \sigma u \exp(-\frac{u^2}{2}) du\\
+    &= \frac{\sigma}{\sqrt{2\pi}} \int_{-\infty}^{\infty} u \exp(-\frac{u^2}{2}) du
+\end{align*}
+Now, let $f(u) = u \exp(-\frac{u^2}{2})$. Note that $f(-u) = -u \exp(-\frac{u^2}{2}) = -f(u)$. So, $f$ is an odd function, i.e $f(-u) = -f(u)$. So, we can divide our integral into two parts:
+\begin{align*}
+    &= \frac{\sigma}{\sqrt{2\pi}} \int_{-\infty}^{\infty} u \exp(-\frac{u^2}{2}) du\\
+    &= \frac{\sigma}{\sqrt{2\pi}} \left( \int_{-\infty}^{0} u \exp(-\frac{u^2}{2}) du + \int_{0}^{\infty} u \exp(-\frac{u^2}{2}) du \right)\\
+    &= \frac{\sigma}{\sqrt{2\pi}} \left( \int_{0}^{\infty} u \exp(-\frac{u^2}{2}) du - \int_{0}^{\infty} u \exp(-\frac{u^2}{2}) du \right)\\
+    &= 0
+\end{align*}
 
-    Thus, the algorithm is correct.\\
+So, the final integral evaluates to $\mu$.
 
-    \textbf{Time Complexity:}\\
-    $T(n) = $ time to sort the points + time spent on each iteration of the sweep.\\
-    Sorting the points takes $O(n \log n)$ time.\\
+\newpage
 
-    At step $i$, the time taken is:\\
-    1. $O(\log n)$ time to check if the point is a maximal point in the 2D y-z plane.\\
-    2. $O(\log n)$ time to insert the point into the tree.\\
-    3. $O(d_i \log n)$ time to delete the dominated points from the tree.\\
+\section{Multi-dimensional Output Model}
 
-    So, the total time taken is $O(n \log n) + \sum_{i=1}^{n} O(\log n + \log n + d_i \log n) = O(n \log n + \sum_{i=1}^{n} (2 \log n + d_i \log n)) = O(n \log n + \sum_{i=1}^{n} d_i \log n)$.\\
+\subsection{Finding the closed form of the loss function}
 
-    $d_i$ is simply the amount of deletions at step $i$. Now, we know that the number of deletions is at most $n$ (since we can have at most $n$ points to delete to begin with). So, the total time taken is $O(n \log n + n \log n) = O(n \log n)$.\\
+We are given that:
+\begin{equation*}
+    J(\Theta) = \frac{1}{2} \sum_{i=1}^{m} \sum_{j=1}^{p} ((\Theta^T x^{(i)})_j - y_i^{(j)})^2
+\end{equation*}
 
-    Thus, the algorithm runs in $O(n \log n)$ time, and is able to find the maximal points in the 3D space.
-    
-    
+Let's first write out input data $X$ as a matrix:
+\begin{equation*}
+    X = \begin{bmatrix}
+        (x^{(1)})^T \\
+        (x^{(2)})^T \\
+        \vdots \\
+        (x^{(m)})^T
+    \end{bmatrix}
+\end{equation*}
 
-\end{enumerate}
+Let's also write out the output data $Y$ as a matrix:
+\begin{equation*}
+    Y = \begin{bmatrix}
+        (y^{(1)})^T \\
+        (y^{(2)})^T \\
+        \vdots \\
+        (y^{(m)})^T
+    \end{bmatrix}
+\end{equation*}
+
+Now, we can say that $\hat{Y} = X\Theta$. Our error is $Y - \hat{Y}$. Since, our loss function is essentially each input data's each component error squared, we can say that:
+\begin{equation*}
+    J(\Theta) = \frac{1}{2} \norm{Y - X\Theta}^2_F
+\end{equation*}
+
+Where $\norm{\cdot}_F$ is the Frobenius norm (this is just the square root of the sum of the squares of the elements of the matrix).
+
+We can rewrite this as:
+\begin{equation*}
+    J(\Theta) = \frac{1}{2} \Tr((Y - X\Theta)^T (Y - X\Theta))
+\end{equation*}
+
+Since that is equivalent to the Frobenius norm. This gives us the closed form of the loss function.
+
+\subsection{Finding the closed form solution for the loss function}
+
+We want to minimise the loss function. So we need to take the gradient. For that, we will first expand the loss function and then take the gradient.
+
+\begin{align*}
+    J(\Theta) &= \frac{1}{2} \Tr((Y - X\Theta)^T (Y - X\Theta)) \\
+    &= \frac{1}{2} \Tr((Y^T Y - Y^TX\Theta - \Theta^TX^TY + \Theta^TX^TX\Theta))\\
+    &= \frac{1}{2} \Tr(Y^T Y) - \Tr(Y^T X\Theta) + \frac{1}{2} \Tr(\Theta^TX^TX\Theta)
+\end{align*}
+
+Now we can take the gradient:
+\begin{align*}
+    \nabla_{\Theta} J(\Theta) &= \nabla_{\Theta} \left( \frac{1}{2} \Tr(Y^T Y) - \Tr(Y^T X\Theta) + \frac{1}{2} \Tr(\Theta^TX^TX\Theta) \right)\\
+    &= \nabla_{\Theta} \left( \frac{1}{2} \Tr(Y^T Y) \right) - \nabla_{\Theta} \left( \Tr(Y^T X\Theta) \right) + \nabla_{\Theta} \left( \frac{1}{2} \Tr(\Theta^TX^TX\Theta) \right)\\
+    &= 0 - X^TY + X^T X \Theta\\
+    &= X^T X \Theta - X^T Y
+\end{align*}
+
+Now, we set the gradient to 0 to find the minimum:
+\begin{align*}
+    X^T X \Theta &= X^T Y\\
+    \Theta &= (X^T X)^{-1} X^T Y
+\end{align*}
+
+\newpage
+
+\subsection{Component-wise Outputs}
+
+Say we have $y_j \in \mathbb{R}$ for $j = 1, 2, \dots, p$. We thus now are considering 1 dimension of the $p$ dimensions of the output. We want to see is that if we do $p$ different models, which each take a vector of $n$ parameters each (instead of $n\times p$ parameters), we want to see if we get the same solution.
+
+$x \in \mathbb{R}^n$. Let's solve for this. Say $\Theta_j$ is the parameter vector for the $j$th component. Then, our predicted value for the $j$th component is:
+\begin{equation*}
+    \hat{y}_j = \theta_j^T x
+\end{equation*}
+
+Now, we can write the loss function as:
+\begin{equation*}
+    J(\Theta) = \frac{1}{2} \sum_{i=1}^{n} (y_j - \theta_j^T x^{(i)})^2
+\end{equation*}
+
+This is just the sum of squares of each term. So (I am omitting the derivation as we have done this in class multiple times, and a higher order of this in the previous question), we get:
+\begin{equation*}
+    J(\Theta_j) = \frac{1}{2} (X\Theta_j - Y_j)^T(X\Theta_j - Y_j)
+\end{equation*}
+
+where:
+\begin{equation*}
+    \Theta_j = \begin{bmatrix}
+        \theta_{j1} \\
+        \theta_{j2} \\
+        \vdots \\
+        \theta_{jn}
+    \end{bmatrix}\  Y_j = \begin{bmatrix}
+        y_j^{(1)} \\
+        y_j^{(2)} \\
+        \vdots \\
+        y_j^{(n)}
+    \end{bmatrix}
+\end{equation*}
+
+We can then take the gradient of this with respect to $\Theta_j$ to minimise the loss function:
+\begin{align*}
+    &= \nabla_{\Theta_j} \left( \frac{1}{2} (X\Theta_j - Y_j)^T(X\Theta_j - Y_j) \right)\\
+    &= \frac{1}{2} \nabla_{\Theta_j} \left( (X\Theta_j)^TX\Theta_j - (X\Theta_j)^TY_j - Y_j^T(X\Theta_j) + Y_j^TY_j \right)\\
+    &= \frac{1}{2} \left( \Theta_j^T(X^TX)\Theta_j - 2(X^TY_j)^T\Theta_j \right)\\
+    &= X^TX\Theta_j - X^TY_j
+\end{align*}
+
+Setting this to 0, we get:
+\begin{equation*}
+    X^TX\Theta_j = X^TY_j
+\end{equation*}
+
+Finally, from this $\Theta_j = (X^TX)^{-1}X^TY_j$.
+
+We will have $p$ such $\Theta_j$s, one for each component:
+\begin{equation*}
+    \Theta = \begin{bmatrix}
+        \Theta_1 \\
+        \Theta_2 \\
+        \vdots \\
+        \Theta_p
+    \end{bmatrix}
+\end{equation*}
+
+This is precisely the same as what we had in the previous question. So we get the same solution.
 
 \end{document}
