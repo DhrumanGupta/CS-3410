@@ -1,2 +1,6 @@
 aux
 _minted-*
+
+.venv
+.DS_Store
+*.zip
